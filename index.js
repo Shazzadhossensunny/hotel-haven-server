@@ -1,7 +1,7 @@
 const express = require('express');
 const app = express();
 var cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 var cookieParser = require('cookie-parser');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
@@ -43,6 +43,24 @@ async function run() {
         const result = await cursor.toArray()
         res.send(result)
     })
+    app.get("/rooms/:id", async(req, res)=> {
+        const id = req.params.id;
+        const query = {_id : new ObjectId(id)}
+        const result = await roomsCollection.findOne(query)
+        res.send(result)
+    })
+   app.put("/rooms/:id", async(req, res)=>{
+    const id = req.params.id;
+    const availability = req.body;
+    const query = {_id : new ObjectId(id)}
+    const option = {upsert: true}
+    const updateDoc = {
+        $set: availability,
+    }
+    const result = await roomsCollection.updateOne(query, updateDoc, option)
+    res.send(result)
+
+   })
     app.get("/featuredRooms", async(req, res)=>{
         const result = await roomsCollection.find().limit(6).toArray()
         res.send(result)

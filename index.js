@@ -21,9 +21,8 @@ app.use(cors(corsOptions))
 app.use(express.json());
 app.use(cookieParser())
 
-const uri = 'mongodb://localhost:27017';
-// const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}L@cluster0.5kgqkgx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-
+// const uri = 'mongodb://localhost:27017';
+const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5kgqkgx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
   serverApi: {
@@ -36,7 +35,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    const roomsCollection = client.db('hotelHavenDB').collection('rooms')
+    const roomsCollection = client.db('hotelHavenDb').collection('rooms')
 
     app.get("/rooms", async(req, res)=>{
         const cursor = roomsCollection.find()

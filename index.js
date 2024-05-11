@@ -60,6 +60,30 @@ async function run() {
     res.send(result)
 
    })
+
+
+   app.get("/myRoom/:email", async(req, res)=>{
+     const result = await roomsCollection.find({ email: req.params.email}).toArray()
+     res.send(result)
+   })
+   app.patch("/rooms/:id", async(req, res)=>{
+    const id = req.params.id;
+    const date = req.body;
+    console.log(date)
+    const query = {_id : new ObjectId(id)}
+    const updateDoc = {
+        $set: {startDate: date.startDate},
+    }
+    const result = await roomsCollection.updateOne(query, updateDoc)
+    res.send(result)
+
+   })
+   app.delete("/rooms/:id", async(req, res)=>{
+    const id = req.params.id;
+    const query = {_id: new ObjectId(id)}
+    const result = await roomsCollection.deleteOne(query)
+    res.send(result)
+   })
     app.get("/featuredRooms", async(req, res)=>{
         const result = await roomsCollection.find().limit(6).toArray()
         res.send(result)

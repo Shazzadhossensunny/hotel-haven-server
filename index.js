@@ -66,18 +66,22 @@ async function run() {
      const result = await roomsCollection.find({ email: req.params.email}).toArray()
      res.send(result)
    })
+
    app.patch("/rooms/:id", async(req, res)=>{
     const id = req.params.id;
+    console.log(id)
     const date = req.body;
-    console.log(date)
+    console.log(date.startDate)
     const query = {_id : new ObjectId(id)}
     const updateDoc = {
         $set: {startDate: date.startDate},
+        // $set: {...date},
     }
     const result = await roomsCollection.updateOne(query, updateDoc)
     res.send(result)
 
    })
+
    app.delete("/rooms/:id", async(req, res)=>{
     const id = req.params.id;
     const query = {_id: new ObjectId(id)}

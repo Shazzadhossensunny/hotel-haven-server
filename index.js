@@ -36,6 +36,7 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     const roomsCollection = client.db('hotelHavenDb').collection('rooms')
+    const reviewCollection = client.db('hotelHavenDb').collection('rooms')
 
     app.get("/rooms", async(req, res)=>{
         const cursor = roomsCollection.find()
@@ -91,6 +92,20 @@ async function run() {
     app.get("/featuredRooms", async(req, res)=>{
         const result = await roomsCollection.find().limit(6).toArray()
         res.send(result)
+    })
+
+    // review collection
+    app.put("/review/:id", async(req, res)=>{
+      const id = req.params.id
+      const item = req.body;
+      const filter = { _id: new ObjectId(id)}
+      const options = { upsert: true };
+      const updateDoc = {
+        $push:{reviews: { $each: [item] }}
+      }
+      const result = await roomsCollection.updateOne(filter, updateDoc, options)
+      res.send(result)
+
     })
 
 

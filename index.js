@@ -36,7 +36,7 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     const roomsCollection = client.db('hotelHavenDb').collection('rooms')
-    const reviewCollection = client.db('hotelHavenDb').collection('rooms')
+    // const reviewCollection = client.db('hotelHavenDb').collection('rooms')
 
     app.get("/rooms", async(req, res)=>{
         const cursor = roomsCollection.find()
@@ -95,6 +95,43 @@ async function run() {
     })
 
     // review collection
+    app.get("/review", async (req, res) => {
+      try {
+          const pipeline = [
+              {
+                  $unwind: "$reviews"
+              },
+              {
+                  $sort: { "reviews.timestamp": -1 }
+              },
+              {
+                  $group: {
+                      _id: null,
+                      reviews: { $push: "$reviews" }
+                  }
+              },
+              {
+                  $project: {
+                      _id: 0,
+                      reviews: 1
+                  }
+              }
+          ];
+
+          const result = await roomsCollection.aggregate(pipeline).toArray();
+          if (result.length > 0) {
+              res.json(result[0].reviews);
+          } else {
+              res.json([]);
+          }
+      } catch (error) {
+          console.error('Error fetching reviews:', error);
+          res.status(500).json({ success: false, message: 'An error occurred while fetching reviews' });
+      }
+  });
+
+
+
     app.put("/review/:id", async(req, res)=>{
       const id = req.params.id
       const item = req.body;

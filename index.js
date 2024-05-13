@@ -145,6 +145,17 @@ async function run() {
       const result = await roomsCollection.deleteOne(query);
       res.send(result);
     });
+    // app.patch("/room/:id", async (req, res) => {
+    //   const id = req.params.id;
+    //   const  availability = req.body;
+    //   const query = { _id: new ObjectId(id) };
+    //   const updateDoc = {
+    //     $set: availability ,
+
+    //   };
+    //   const result = await roomsCollection.updateOne(query, updateDoc);
+    //   res.send(result);
+    // });
 
     app.get("/featuredRooms", async (req, res) => {
       const result = await roomsCollection.find().limit(6).toArray();

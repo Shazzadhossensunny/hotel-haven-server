@@ -78,11 +78,24 @@ async function run() {
       res.clearCookie("token", { maxAge: 0 }).send({ success: true });
     });
 
-    app.get("/rooms", async (req, res) => {
-      const cursor = roomsCollection.find();
-      const result = await cursor.toArray();
-      res.send(result);
-    });
+    // app.get("/rooms", async (req, res) => {
+    //   const cursor = roomsCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+    app.get("/rooms", async (req, res)=>{
+      const {minPrice, maxPrice} = req.query;
+      let filter = {}
+      if(minPrice && maxPrice){
+        filter = {price_per_night: {$gte: parseInt(minPrice), $lte: parseInt(maxPrice)}};
+      }else if(minPrice){
+        filter = {
+          price_per_night : {$gte: parseInt(minPrice)}}
+      }else if(maxPrice){{parseInt(maxPrice)}}
+      const cursor = roomsCollection.find(filter);
+      const result = await cursor.toArray()
+      res.send(result)
+    })
     app.get("/rooms/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };

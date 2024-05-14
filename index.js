@@ -10,35 +10,37 @@ const port = process.env.PORT || 5000;
 // middleware
 const corsOptions = {
   origin: [
-    "http://localhost:5173",
-    "http://localhost:5174",
     "https://hotel-haven-c883c.web.app",
+    "http://localhost:5173",
+    "https://hotel-haven-c883c.firebaseapp.com",
+    "https://sprightly-heliotrope-3d2de1.netlify.app",
   ],
   credentials: true,
-  optionSuccessStatus: 200,
+  // optionSuccessStatus: 200,
 };
 app.use(cors(corsOptions));
-app.use(express.json());
 app.use(cookieParser());
+app.use(express.json());
 
 // verify jwt middleware
-const logger = (req, res, next) =>{
-  console.log('log: info', req.method, req.url);
+const logger = (req, res, next) => {
+  console.log("log: info", req.method, req.url);
   next();
-}
- const verifyToken = (req, res, next) => {
-   const token = req?.cookies?.token;
-   if(!token){
-    return res.status(401).send({message: 'unauthorized access'})
-   }
-   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
-     if(err){
-      return res.status(401).send({message: 'unauthorized access'})
-     }
-     req.user = decoded;
-     next();
-   })
- }
+};
+const verifyToken = (req, res, next) => {
+  const token = req?.cookies?.token;
+  console.log(req.cookies);
+  if (!token) {
+    return res.status(401).send({ message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(401).send({ message: "unauthorized access" });
+    }
+    req.user = decoded;
+    next();
+  });
+};
 
 // const uri = 'mongodb://localhost:27017';
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.5kgqkgx.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -64,6 +66,11 @@ async function run() {
         expiresIn: "7d",
       });
       res
+        // .cookie("token", token, {
+        //   httpOnly: true,
+        //   secure: process.env.NODE_ENV === "production" ? true : false,
+        //   sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        // })
         .cookie("token", token, {
           httpOnly: true,
           secure: process.env.NODE_ENV === "production",
@@ -75,7 +82,9 @@ async function run() {
     app.post("/logout", async (req, res) => {
       const user = req.body;
       console.log("logging out", user);
-      res.clearCookie("token", { maxAge: 0 }).send({ success: true });
+      res
+        .clearCookie("token", { maxAge: 0, sameSite: "none", secure: true })
+        .send({ success: true });
     });
 
     // app.get("/rooms", async (req, res) => {
@@ -83,19 +92,29 @@ async function run() {
     //   const result = await cursor.toArray();
     //   res.send(result);
     // });
-    app.get("/rooms", async (req, res)=>{
-      const {minPrice, maxPrice} = req.query;
-      let filter = {}
-      if(minPrice && maxPrice){
-        filter = {price_per_night: {$gte: parseInt(minPrice), $lte: parseInt(maxPrice)}};
-      }else if(minPrice){
+    app.get("/rooms", async (req, res) => {
+      const { minPrice, maxPrice } = req.query;
+      let filter = {};
+      if (minPrice && maxPrice) {
         filter = {
-          price_per_night : {$gte: parseInt(minPrice)}}
-      }else if(maxPrice){{parseInt(maxPrice)}}
+          price_per_night: {
+            $gte: parseInt(minPrice),
+            $lte: parseInt(maxPrice),
+          },
+        };
+      } else if (minPrice) {
+        filter = {
+          price_per_night: { $gte: parseInt(minPrice) },
+        };
+      } else if (maxPrice) {
+        {
+          parseInt(maxPrice);
+        }
+      }
       const cursor = roomsCollection.find(filter);
-      const result = await cursor.toArray()
-      res.send(result)
-    })
+      const result = await cursor.toArray();
+      res.send(result);
+    });
     app.get("/rooms/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -115,13 +134,12 @@ async function run() {
     });
 
     app.get("/myRoom/:email", logger, verifyToken, async (req, res) => {
-      const email = req.params.email
-      if(email !== req.user.email){
-        return res.status(403).send({message: 'forbidden access'})
+      const email = req.params.email;
+      // console.log(email);
+      if (email !== req.user.email) {
+        return res.status(403).send({ message: "forbidden access" });
       }
-      const result = await roomsCollection
-        .find({ email: email })
-        .toArray();
+      const result = await roomsCollection.find({ email: email }).toArray();
       res.send(result);
     });
 
@@ -145,20 +163,6 @@ async function run() {
       const result = await roomsCollection.deleteOne(query);
       res.send(result);
     });
-
-    // app.delete("/rooms/:id", async (req, res) => {
-    //   const id = req.params.id;
-    //   const  availability = req.body;
-    //   const query = { _id: new ObjectId(id) };
-    //   const updateDoc = {
-    //         $set: {...availability} ,
-
-    //       };
-    //       const result = await roomsCollection.updateOne(query, updateDoc);
-    //       const result2 = await roomsCollection.deleteOne(query);
-    //   res.send({result, result2});
-    // });
-
 
     app.get("/featuredRooms", async (req, res) => {
       const result = await roomsCollection.find().limit(6).toArray();
@@ -202,12 +206,10 @@ async function run() {
         }
       } catch (error) {
         console.error("Error fetching reviews:", error);
-        res
-          .status(500)
-          .json({
-            success: false,
-            message: "An error occurred while fetching reviews",
-          });
+        res.status(500).json({
+          success: false,
+          message: "An error occurred while fetching reviews",
+        });
       }
     });
 
@@ -227,9 +229,9 @@ async function run() {
       res.send(result);
     });
 
-    await client.connect();
+    // await client.connect();
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
